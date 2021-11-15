@@ -85,12 +85,16 @@ class DatabaseSchemaEditor(PostgresqlDatabaseSchemaEditor):
         # Hack: Citus will throw the following error if these statements are
         # not executed separately: "ERROR: cannot execute multiple utility events"
         if sql and not params:
-            for statement in str(sql).split(';'):
-                if statement and not statement.isspace():
-                    super(DatabaseSchemaEditor, self).execute(statement)
+            # added fix to slove issue in this code for executing function, triggers which has samiclon in his DDL script 
+            query = str(sql).lower()
+            if query.__contains__("function") or query.__contains__("trigger"):
+                    super(DatabaseSchemaEditor, self).execute(sql, params)
+            else:
+                for statement in str(sql).split(';'):
+                    if statement and not statement.isspace():
+                        super(DatabaseSchemaEditor, self).execute(statement)
         elif sql:
             super(DatabaseSchemaEditor, self).execute(sql, params)
-
 
     def _create_index_name(self, model, column_names, suffix=""):
         # compat with django 2.X and django 1.X
